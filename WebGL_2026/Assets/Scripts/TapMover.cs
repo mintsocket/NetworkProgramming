@@ -7,7 +7,7 @@ public class TapMover : MonoBehaviour, IPointerDownHandler
     public float speed = 8f;
     private Vector3 target;
     void Start() 
-    { 
+    {
         target = player.position; 
     }
     public void OnPointerDown(PointerEventData e)
