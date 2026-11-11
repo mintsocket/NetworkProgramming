@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <title>{{{ PRODUCT_NAME }}}</title>
+    <style>
+      html, body { margin: 0; padding: 0; background: #1B2A3D; height: 100%; }
+      #unity-container { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+      #unity-container.unity-mobile { position: fixed; left: 0; top: 0; width: 100%; height: 100%; transform: none; }
+      #unity-canvas { background: #1B2A3D; display: block; }
+      .unity-mobile #unity-canvas { width: 100%; height: 100%; }
+      #unity-loading-bar { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: none; text-align: center; color: #D7DFE8; font-family: Arial, sans-serif; }
+      #unity-progress-bar-empty { width: 200px; height: 10px; margin: 12px auto 0; background: #2A3A50; border-radius: 5px; }
+      #unity-progress-bar-full { width: 0%; height: 100%; background: #2FA8EF; border-radius: 5px; }
+      #unity-warning { position: absolute; left: 50%; top: 5%; transform: translate(-50%); background: white; padding: 10px; display: none; }
+      /* 로그인 버튼 — 캔버스 위에 HTML 로 올림. 브라우저 팝업은 HTML 버튼 클릭에서만 안정적으로 열림 */
+      #login-google { position: absolute; right: 12px; top: 12px; display: none; padding: 8px 14px; border: 0; border-radius: 6px;
+                      background: #ffffff; color: #1B2A3D; font: bold 13px Arial, sans-serif; cursor: pointer; }
+    </style>
+
+    <!-- Firebase JS SDK (compat 빌드: window.firebase 전역으로 사용) -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script>
+      // ★ 여기만 본인 프로젝트 값으로 교체 (Firebase 콘솔 > 프로젝트 설정 > 일반 > 내 앱 > SDK 설정)
+      var FIREBASE_CONFIG = {
+        apiKey: "AIzaSyAHtf-jHnW8rVTpuGJp3cXi1MX-nQtccUU",
+        authDomain: "netpro2026-a2fd5.firebaseapp.com",
+        projectId: "netpro2026-a2fd5",
+        appId: "1:926057269598:web:be804c3b87c1d9798627cf"
+      };
+    </script>
+  </head>
+  <body>
+    <div id="unity-container" class="unity-desktop">
+      <canvas id="unity-canvas" width={{{ WIDTH }}} height={{{ HEIGHT }}} tabindex="-1"></canvas>
+      <div id="unity-loading-bar">
+        <div>{{{ PRODUCT_NAME }}}</div>
+        <div id="unity-progress-bar-empty"><div id="unity-progress-bar-full"></div></div>
+      </div>
+      <div id="unity-warning"> </div>
+      <button id="login-google" type="button">Google 로그인</button>
+    </div>
+
+    <script>
+      // ===== Firebase 로그인 다리 (JS ↔ Unity) =====
+      firebase.initializeApp(FIREBASE_CONFIG);
+
+      window.NetAuth = {
+        instance: null,   // createUnityInstance 결과
+        ready: false,     // Unity 의 AuthManager 가 NetAuth_Ready() 를 불렀는가
+        current: null,    // 마지막 로그인 상태
+        send: function (payload) {
+          this.current = payload;
+          if (this.ready && this.instance) {
+            this.instance.SendMessage("AuthManager", "OnAuthChanged", JSON.stringify(payload));
+          }
+          document.getElementById("login-google").style.display = payload.uid ? "none" : "block";
+        },
+        onReady: function () {           // Unity 쪽 준비 완료 → 알고 있는 상태를 보냄
+          this.ready = true;
+          if (this.current) this.send(this.current);
+        },
+        signInGoogle: function () {
+          var provider = new firebase.auth.GoogleAuthProvider();
+          firebase.auth().signInWithPopup(provider).catch(function (e) {
+            if (e.code === "auth/popup-blocked") firebase.auth().signInWithRedirect(provider);
+            else console.error("Google 로그인 실패", e.code, e.message);
+          });
+        },
+        signOut: function () { firebase.auth().signOut(); }
+      };
+
+      // 로그인 상태가 바뀔 때마다 (페이지 열 때 1회 + 로그인/로그아웃 때) Unity 로 전달
+      firebase.auth().onAuthStateChanged(function (user) {
+        if (!user) { window.NetAuth.send({ uid: "", idToken: "", name: "", provider: "" }); return; }
+        user.getIdToken().then(function (token) {
+          window.NetAuth.send({
+            uid: user.uid,
+            idToken: token,
+            name: user.displayName || "",
+            provider: user.providerData.length ? user.providerData[0].providerId : "anonymous"
+          });
+        });
+      });
+
+      document.getElementById("login-google").onclick = function () { window.NetAuth.signInGoogle(); };
+    </script>
+
+    <script>
+      // ===== Unity 로더 (Default 템플릿과 동일) =====
+      var canvas = document.querySelector("#unity-canvas");
+
+      function unityShowBanner(msg, type) {
+        var warningBanner = document.querySelector("#unity-warning");
+        function updateBannerVisibility() { warningBanner.style.display = warningBanner.children.length ? 'block' : 'none'; }
+        var div = document.createElement('div');
+        div.innerHTML = msg;
+        warningBanner.appendChild(div);
+        if (type == 'error') div.style = 'background: red; padding: 10px;';
+        else {
+          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
+          setTimeout(function() { warningBanner.removeChild(div); updateBannerVisibility(); }, 5000);
+        }
+        updateBannerVisibility();
+      }
+
+      var buildUrl = "Build";
+      var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+      var config = {
+        arguments: [],
+        dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+        frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+        workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+#endif
+#if USE_WASM
+        codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+        memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+        showBanner: unityShowBanner,
+      };
+
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        var meta = document.createElement('meta');
+        meta.name = 'viewport';
+        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
+        document.getElementsByTagName('head')[0].appendChild(meta);
+        document.querySelector("#unity-container").className = "unity-mobile";
+        canvas.className = "unity-mobile";
+      } else {
+        canvas.style.width = "{{{ WIDTH }}}px";
+        canvas.style.height = "{{{ HEIGHT }}}px";
+      }
+
+      document.querySelector("#unity-loading-bar").style.display = "block";
+
+      var script = document.createElement("script");
+      script.src = loaderUrl;
+      script.onload = () => {
+        createUnityInstance(canvas, config, (progress) => {
+          document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
+        }).then((unityInstance) => {
+          document.querySelector("#unity-loading-bar").style.display = "none";
+          window.NetAuth.instance = unityInstance;      // ★ 다리에 Unity 인스턴스 연결
+        }).catch((message) => {
+          alert(message);
+        });
+      };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>

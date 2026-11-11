@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-
+ 
 public class TapMover : MonoBehaviour, IPointerDownHandler
 {
     public Transform player;
@@ -8,7 +8,7 @@ public class TapMover : MonoBehaviour, IPointerDownHandler
     private Vector3 target;
     void Start() 
     {
-        target = player.position; 
+         target = player.position; 
     }
     public void OnPointerDown(PointerEventData e)
     {

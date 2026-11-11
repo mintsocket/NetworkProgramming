@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
-
+ 
 public class SwipeMover : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
     public Transform player;

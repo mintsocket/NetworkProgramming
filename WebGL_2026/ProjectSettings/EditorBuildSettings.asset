@@ -7,25 +7,25 @@ EditorBuildSettings:
   m_Scenes:
   - enabled: 1
     path: Assets/Scenes/Menu.unity
-    guid: 9ee53230f4741d6408a6ac30977261a0
+    guid: 6e955397de8cba948b652c75ee92f61b
   - enabled: 1
     path: Assets/Scenes/Game.unity
-    guid: 749e120924f7b9544acf89dff0a9da63
-  - enabled: 1
-    path: Assets/Scenes/Hold.unity
-    guid: 5a1c547be7b9b9b46a1c2cc329fb4781
-  - enabled: 1
-    path: Assets/Scenes/Click.unity
-    guid: fc6e71505c86e974b9d1f91c8477efbf
+    guid: 35ab1c0c0b6d4bd47996aca7c9cc8f33
   - enabled: 1
     path: Assets/Scenes/Stick.unity
-    guid: e723378f9a19bd645a10253881013be2
+    guid: 8c9cfa26abfee488c85f1582747f6a02
+  - enabled: 1
+    path: Assets/Scenes/Click.unity
+    guid: 562dc227cd875cc48a43e5001df26c84
+  - enabled: 1
+    path: Assets/Scenes/Hold.unity
+    guid: ac91e84b449bb1b4cbcb749f9d42e85b
   - enabled: 1
     path: Assets/Scenes/Swipe.unity
-    guid: 02edec8ae3a48d241b3156a0e307e86d
+    guid: 2eb79d6c28605d8498b3196eb3b30c9b
   - enabled: 1
-    path: Assets/Scenes/Tap.unity
-    guid: bffd9e4879ae4c447a8b404cccf37e23
+    path: Assets/Scenes/Tab.unity
+    guid: 3d1c18f85b2798648b94ed5a1b12d594
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   m_UseUCBPForAssetBundles: 0
