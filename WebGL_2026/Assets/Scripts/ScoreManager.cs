@@ -24,6 +24,7 @@ public class ScoreManager : MonoBehaviour
             best = score;
             PlayerPrefs.SetInt("BestScore", best);
             PlayerPrefs.Save();
+            ScoreSaver.Instance.Save(best);
         }
         scoreText.text = "SCORE " + score;
         bestText.text = "BEST " + best;
